@@ -2,21 +2,26 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>Draw!</title>
 
 <link rel="manifest" href="manifest.json">
+
 <meta name="theme-color" content="#ffffff">
 
 <style>
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   width: 100%;
   height: 100%;
@@ -35,27 +40,39 @@ body {
 #top {
   height: 64px;
   min-height: 64px;
+
   background: white;
+
   display: flex;
   align-items: center;
+
   gap: 10px;
+
   padding: 8px 12px;
+
   box-shadow: 0 2px 8px rgba(0,0,0,.15);
+
   z-index: 5;
 }
 
 #title {
   font-size: 22px;
   font-weight: bold;
+
   margin-right: auto;
 }
 
 button {
   border: 0;
+
   background: #eeeeee;
+
   border-radius: 12px;
+
   padding: 10px 14px;
+
   font-size: 16px;
+
   cursor: pointer;
 }
 
@@ -67,84 +84,157 @@ button:active {
 
 #canvasWrap {
   flex: 1;
+
   position: relative;
+
   overflow: hidden;
 }
 
 #canvas {
   position: absolute;
+
   inset: 0;
+
   width: 100%;
   height: 100%;
+
   background: white;
+
   touch-action: none;
 }
 
-/* ---------- TOOLBAR ---------- */
+/* ---------- TOOLS ---------- */
 
 #tools {
+
   min-height: 82px;
+
   background: white;
+
   display: flex;
+
   align-items: center;
+
   gap: 10px;
+
   padding: 10px;
+
   overflow-x: auto;
+
   box-shadow: 0 -2px 8px rgba(0,0,0,.15);
+
   z-index: 5;
 }
 
 .tool {
+
   flex: 0 0 auto;
+
   min-width: 48px;
+
   height: 48px;
+
   padding: 0 12px;
 }
 
 #color {
+
   width: 52px;
+
   height: 52px;
+
   padding: 3px;
+
   border: none;
+
   background: transparent;
 }
 
 #size {
+
   width: 120px;
+}
+
+/* ---------- NOTIFICATION BUTTON ---------- */
+
+#notify {
+
+  background: #e9f3ff;
+
+  border: 1px solid #b8d9ff;
+
+  font-weight: bold;
+
+  white-space: nowrap;
+}
+
+#notify.enabled {
+
+  background: #e7f8ec;
+
+  border-color: #a9ddb8;
+}
+
+#notify.error {
+
+  background: #ffe8e8;
+
+  border-color: #ffb5b5;
 }
 
 /* ---------- MOBILE ---------- */
 
 @media (max-width: 600px) {
+
   #title {
     font-size: 19px;
   }
 
   #top button {
+
     padding: 9px 10px;
+
     font-size: 14px;
   }
 
   #tools {
+
     min-height: 76px;
   }
 }
+
 </style>
 </head>
 
 <body>
 
 <header id="top">
-  <div id="title">🎨 Draw!</div>
 
-  <button onclick="undo()">↩️</button>
-  <button onclick="redo()">↪️</button>
-  <button onclick="clearCanvas()">🗑️</button>
+  <div id="title">
+    🎨 Draw!
+  </div>
+
+  <button onclick="undo()">
+    ↩️
+  </button>
+
+  <button onclick="redo()">
+    ↪️
+  </button>
+
+  <button onclick="clearCanvas()">
+    🗑️
+  </button>
+
 </header>
 
+
 <div id="canvasWrap">
+
   <canvas id="canvas"></canvas>
+
 </div>
+
 
 <div id="tools">
 
@@ -162,197 +252,147 @@ button:active {
     value="6"
     title="Brush size">
 
-  <button class="tool" onclick="setEraser()">🧽</button>
-  <button class="tool" onclick="setPen()">🖌️</button>
-  <button class="tool" onclick="saveDrawing()">💾</button>
+  <button
+    class="tool"
+    onclick="setEraser()">
+    🧽
+  </button>
+
+  <button
+    class="tool"
+    onclick="setPen()">
+    🖌️
+  </button>
+
+  <button
+    class="tool"
+    onclick="saveDrawing()">
+    💾
+  </button>
 
 </div>
 
-<script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
 
-const colorInput = document.getElementById("color");
-const sizeInput = document.getElementById("size");
+<script type="module">
+
+/* =========================================================
+   FIREBASE
+   ========================================================= */
+
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
+import {
+  getMessaging,
+  getToken,
+  onMessage
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging.js";
+
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyCnBht8Ivsc3sAS-RQ8imzZuqB6TA5txFM",
+
+  authDomain:
+    "drawing-app-reminder.firebaseapp.com",
+
+  projectId:
+    "drawing-app-reminder",
+
+  storageBucket:
+    "drawing-app-reminder.firebasestorage.app",
+
+  messagingSenderId:
+    "698327080230",
+
+  appId:
+    "1:698327080230:web:6dc19d338a0af044d2b5e7"
+
+};
+
+
+const firebaseApp =
+  initializeApp(firebaseConfig);
+
+
+let messaging = null;
+
+
+/* =========================================================
+   DRAWING
+   ========================================================= */
+
+const canvas =
+  document.getElementById("canvas");
+
+const ctx =
+  canvas.getContext("2d");
+
+const colorInput =
+  document.getElementById("color");
+
+const sizeInput =
+  document.getElementById("size");
 
 let drawing = false;
+
 let erasing = false;
 
 let history = [];
+
 let historyIndex = -1;
+
+
+/* ---------- CANVAS SIZE ---------- */
 
 function resizeCanvas() {
 
-  const old = document.createElement("canvas");
+  const old =
+    document.createElement("canvas");
+
   old.width = canvas.width;
+
   old.height = canvas.height;
 
+
   if (canvas.width && canvas.height) {
-    old.getContext("2d").drawImage(canvas, 0, 0);
+
+    old
+      .getContext("2d")
+      .drawImage(canvas, 0, 0);
+
   }
 
-  const rect = canvas.getBoundingClientRect();
 
-  const dpr = window.devicePixelRatio || 1;
+  const rect =
+    canvas.getBoundingClientRect();
 
-  canvas.width = Math.round(rect.width * dpr);
-  canvas.height = Math.round(rect.height * dpr);
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const dpr =
+    window.devicePixelRatio || 1;
+
+
+  canvas.width =
+    Math.round(rect.width * dpr);
+
+  canvas.height =
+    Math.round(rect.height * dpr);
+
+
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
 
   ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, rect.width, rect.height);
 
-  if (old.width && old.height) {
-    ctx.drawImage(
-      old,
-      0,
-      0,
-      old.width,
-      old.height,
-      0,
-      0,
-      rect.width,
-      rect.height
-    );
-  }
-}
-
-function position(e) {
-
-  const rect = canvas.getBoundingClientRect();
-
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
-  };
-}
-
-function startDrawing(e) {
-
-  e.preventDefault();
-
-  drawing = true;
-
-  const p = position(e);
-
-  ctx.beginPath();
-  ctx.moveTo(p.x, p.y);
-}
-
-function draw(e) {
-
-  if (!drawing) return;
-
-  e.preventDefault();
-
-  const p = position(e);
-
-  ctx.lineWidth = Number(sizeInput.value);
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-
-  if (erasing) {
-
-    ctx.globalCompositeOperation = "destination-out";
-
-  } else {
-
-    ctx.globalCompositeOperation = "source-over";
-    ctx.strokeStyle = colorInput.value;
-
-  }
-
-  ctx.lineTo(p.x, p.y);
-  ctx.stroke();
-}
-
-function stopDrawing() {
-
-  if (!drawing) return;
-
-  drawing = false;
-
-  ctx.closePath();
-  ctx.globalCompositeOperation = "source-over";
-
-  saveHistory();
-}
-
-function saveHistory() {
-
-  history = history.slice(0, historyIndex + 1);
-
-  history.push(canvas.toDataURL());
-
-  historyIndex++;
-
-  if (history.length > 30) {
-    history.shift();
-    historyIndex--;
-  }
-}
-
-function restore(data) {
-
-  const img = new Image();
-
-  img.onload = function() {
-
-    const rect = canvas.getBoundingClientRect();
-
-    ctx.clearRect(
-      0,
-      0,
-      rect.width,
-      rect.height
-    );
-
-    ctx.drawImage(
-      img,
-      0,
-      0,
-      rect.width,
-      rect.height
-    );
-  };
-
-  img.src = data;
-}
-
-function undo() {
-
-  if (historyIndex <= 0) {
-    return;
-  }
-
-  historyIndex--;
-
-  restore(history[historyIndex]);
-}
-
-function redo() {
-
-  if (historyIndex >= history.length - 1) {
-    return;
-  }
-
-  historyIndex++;
-
-  restore(history[historyIndex]);
-}
-
-function clearCanvas() {
-
-  if (!confirm("Clear this drawing?")) {
-    return;
-  }
-
-  const rect = canvas.getBoundingClientRect();
-
-  ctx.globalCompositeOperation = "source-over";
-
-  ctx.fillStyle = "white";
 
   ctx.fillRect(
     0,
@@ -361,32 +401,333 @@ function clearCanvas() {
     rect.height
   );
 
-  saveHistory();
+
+  if (old.width && old.height) {
+
+    ctx.drawImage(
+
+      old,
+
+      0,
+      0,
+      old.width,
+      old.height,
+
+      0,
+      0,
+      rect.width,
+      rect.height
+
+    );
+
+  }
+
 }
+
+
+/* ---------- POINTER POSITION ---------- */
+
+function position(e) {
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  return {
+
+    x:
+      e.clientX - rect.left,
+
+    y:
+      e.clientY - rect.top
+
+  };
+
+}
+
+
+/* ---------- START DRAWING ---------- */
+
+function startDrawing(e) {
+
+  e.preventDefault();
+
+  drawing = true;
+
+  const p =
+    position(e);
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    p.x,
+    p.y
+  );
+
+}
+
+
+/* ---------- DRAW ---------- */
+
+function draw(e) {
+
+  if (!drawing)
+    return;
+
+  e.preventDefault();
+
+  const p =
+    position(e);
+
+
+  ctx.lineWidth =
+    Number(sizeInput.value);
+
+  ctx.lineCap =
+    "round";
+
+  ctx.lineJoin =
+    "round";
+
+
+  if (erasing) {
+
+    ctx.globalCompositeOperation =
+      "destination-out";
+
+  }
+
+  else {
+
+    ctx.globalCompositeOperation =
+      "source-over";
+
+    ctx.strokeStyle =
+      colorInput.value;
+
+  }
+
+
+  ctx.lineTo(
+    p.x,
+    p.y
+  );
+
+  ctx.stroke();
+
+}
+
+
+/* ---------- STOP DRAWING ---------- */
+
+function stopDrawing() {
+
+  if (!drawing)
+    return;
+
+  drawing = false;
+
+  ctx.closePath();
+
+  ctx.globalCompositeOperation =
+    "source-over";
+
+  saveHistory();
+
+}
+
+
+/* ---------- HISTORY ---------- */
+
+function saveHistory() {
+
+  history =
+    history.slice(
+      0,
+      historyIndex + 1
+    );
+
+
+  history.push(
+    canvas.toDataURL()
+  );
+
+
+  historyIndex++;
+
+
+  if (history.length > 30) {
+
+    history.shift();
+
+    historyIndex--;
+
+  }
+
+}
+
+
+/* ---------- RESTORE ---------- */
+
+function restore(data) {
+
+  const img =
+    new Image();
+
+
+  img.onload =
+    function() {
+
+      const rect =
+        canvas.getBoundingClientRect();
+
+
+      ctx.clearRect(
+
+        0,
+        0,
+        rect.width,
+        rect.height
+
+      );
+
+
+      ctx.drawImage(
+
+        img,
+
+        0,
+        0,
+        rect.width,
+        rect.height
+
+      );
+
+    };
+
+
+  img.src = data;
+
+}
+
+
+/* ---------- UNDO ---------- */
+
+function undo() {
+
+  if (historyIndex <= 0)
+    return;
+
+  historyIndex--;
+
+  restore(
+    history[historyIndex]
+  );
+
+}
+
+
+/* ---------- REDO ---------- */
+
+function redo() {
+
+  if (
+    historyIndex >=
+    history.length - 1
+  )
+    return;
+
+  historyIndex++;
+
+  restore(
+    history[historyIndex]
+  );
+
+}
+
+
+/* ---------- CLEAR ---------- */
+
+function clearCanvas() {
+
+  if (
+    !confirm(
+      "Clear this drawing?"
+    )
+  )
+    return;
+
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+
+  ctx.globalCompositeOperation =
+    "source-over";
+
+
+  ctx.fillStyle =
+    "white";
+
+
+  ctx.fillRect(
+
+    0,
+    0,
+    rect.width,
+    rect.height
+
+  );
+
+
+  saveHistory();
+
+}
+
+
+/* ---------- ERASER ---------- */
 
 function setEraser() {
 
   erasing = true;
+
 }
+
+
+/* ---------- PEN ---------- */
 
 function setPen() {
 
   erasing = false;
+
 }
+
+
+/* ---------- SAVE ---------- */
 
 function saveDrawing() {
 
-  const link = document.createElement("a");
+  const link =
+    document.createElement("a");
+
 
   link.download =
     "drawing-" +
-    new Date().toISOString().replace(/[:.]/g, "-") +
+    new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-") +
     ".png";
 
-  link.href = canvas.toDataURL("image/png");
+
+  link.href =
+    canvas.toDataURL(
+      "image/png"
+    );
+
 
   link.click();
+
 }
+
 
 /* ---------- POINTER EVENTS ---------- */
 
@@ -415,38 +756,377 @@ canvas.addEventListener(
   stopDrawing
 );
 
-/* ---------- STARTUP ---------- */
+
+/* =========================================================
+   FIREBASE NOTIFICATIONS
+   ========================================================= */
+
+async function enableNotifications() {
+
+  const button =
+    document.getElementById(
+      "notify"
+    );
+
+
+  if (
+    !("Notification" in window)
+  ) {
+
+    alert(
+      "This browser does not support notifications."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !("serviceWorker" in navigator)
+  ) {
+
+    alert(
+      "This browser does not support service workers."
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    button.textContent =
+      "⏳ Setting up...";
+
+
+    button.disabled = true;
+
+
+    /* ---------- PERMISSION ---------- */
+
+    const permission =
+      await Notification.requestPermission();
+
+
+    if (permission !== "granted") {
+
+      button.textContent =
+        "🔔 Enable Notifications";
+
+      button.disabled = false;
+
+      alert(
+        "Notification permission was not granted."
+      );
+
+      return;
+
+    }
+
+
+    /* ---------- REGISTER FCM SERVICE WORKER ---------- */
+
+    const registration =
+      await navigator.serviceWorker.register(
+        "./firebase-messaging-sw.js"
+      );
+
+
+    await navigator.serviceWorker.ready;
+
+
+    /* ---------- FIREBASE MESSAGING ---------- */
+
+    messaging =
+      getMessaging(
+        firebaseApp
+      );
+
+
+    /* ---------- GET TOKEN ---------- */
+
+    const token =
+      await getToken(
+
+        messaging,
+
+        {
+
+          vapidKey:
+            "BGuYW4xEa_Rlzq2dvKB_b3VFFcEGVd86ngHSuQD4Y9-zJo797YWilLFHfXiVx4oD95SyXReHdisKRGtVcPKF_uQ",
+
+          serviceWorkerRegistration:
+            registration
+
+        }
+
+      );
+
+
+    if (!token) {
+
+      throw new Error(
+        "Firebase did not return a notification token."
+      );
+
+    }
+
+
+    /*
+       We temporarily store the token locally.
+
+       Later, when we build the scheduler,
+       we will securely register this token
+       with the notification backend.
+    */
+
+    localStorage.setItem(
+      "drawingNotificationToken",
+      token
+    );
+
+
+    localStorage.setItem(
+      "drawingNotificationsEnabled",
+      "true"
+    );
+
+
+    button.textContent =
+      "🔔 Notifications ON";
+
+    button.classList.add(
+      "enabled"
+    );
+
+    button.disabled = false;
+
+
+    console.log(
+      "FCM registration token:",
+      token
+    );
+
+
+    alert(
+      "Notifications are enabled on this device."
+    );
+
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Notification setup failed:",
+      error
+    );
+
+
+    button.textContent =
+      "🔔 Enable Notifications";
+
+    button.disabled = false;
+
+    button.classList.add(
+      "error"
+    );
+
+
+    alert(
+      "Notification setup failed.\n\n" +
+      error.message
+    );
+
+  }
+
+}
+
+
+/* ---------- FOREGROUND MESSAGES ---------- */
+
+function setupForegroundMessaging() {
+
+  try {
+
+    messaging =
+      getMessaging(
+        firebaseApp
+      );
+
+
+    onMessage(
+      messaging,
+      payload => {
+
+        console.log(
+          "Foreground notification:",
+          payload
+        );
+
+
+        const title =
+          payload.notification?.title ||
+          "🎨 Drawing Reminder";
+
+
+        const body =
+          payload.notification?.body ||
+          "Time to draw! ✏️";
+
+
+        if (
+          Notification.permission ===
+          "granted"
+        ) {
+
+          new Notification(
+            title,
+            {
+
+              body: body,
+
+              icon:
+                "./icon-192.png"
+
+            }
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Foreground messaging setup failed:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   NOTIFICATION BUTTON
+   ========================================================= */
+
+function addNotificationButton() {
+
+  const top =
+    document.getElementById(
+      "top"
+    );
+
+
+  const button =
+    document.createElement(
+      "button"
+    );
+
+
+  button.id =
+    "notify";
+
+
+  button.textContent =
+    "🔔 Enable Notifications";
+
+
+  button.addEventListener(
+    "click",
+    enableNotifications
+  );
+
+
+  top.appendChild(
+    button
+  );
+
+
+  if (
+    localStorage.getItem(
+      "drawingNotificationsEnabled"
+    ) === "true" &&
+    Notification.permission ===
+      "granted"
+  ) {
+
+    button.textContent =
+      "🔔 Notifications ON";
+
+    button.classList.add(
+      "enabled"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   PWA SERVICE WORKER
+   ========================================================= */
+
+async function registerPWA() {
+
+  if (
+    !("serviceWorker" in navigator)
+  )
+    return;
+
+
+  try {
+
+    await navigator.serviceWorker.register(
+      "./service-worker.js"
+    );
+
+
+    console.log(
+      "PWA service worker registered"
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "PWA service worker registration failed:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   STARTUP
+   ========================================================= */
 
 window.addEventListener(
   "resize",
   resizeCanvas
 );
 
+
 resizeCanvas();
+
 saveHistory();
 
-/* ---------- PWA SERVICE WORKER ---------- */
+addNotificationButton();
 
-if ("serviceWorker" in navigator) {
+registerPWA();
 
-  window.addEventListener("load", () => {
+setupForegroundMessaging();
 
-    navigator.serviceWorker.register("./service-worker.js")
-
-      .then(() => {
-        console.log("Service worker registered");
-      })
-
-      .catch(error => {
-        console.error(
-          "Service worker registration failed:",
-          error
-        );
-      });
-
-  });
-
-}
 </script>
 
 </body>
