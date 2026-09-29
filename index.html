@@ -1,17 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
 
 <meta
   name="viewport"
-  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
 
 <title>Draw!</title>
 
-<link rel="manifest" href="manifest.json">
+<link
+  rel="manifest"
+  href="manifest.json"
+>
 
-<meta name="theme-color" content="#ffffff">
+<meta
+  name="theme-color"
+  content="#ffffff"
+>
 
 <style>
 
@@ -22,47 +31,66 @@
 
 html,
 body {
+
   margin: 0;
+
   width: 100%;
   height: 100%;
+
   overflow: hidden;
+
   font-family: Arial, sans-serif;
+
   background: #f5f5f5;
 }
 
 body {
+
   display: flex;
+
   flex-direction: column;
 }
 
-/* ---------- TOP BAR ---------- */
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
 
 #top {
+
   height: 64px;
+
   min-height: 64px;
 
   background: white;
 
   display: flex;
+
   align-items: center;
 
   gap: 10px;
 
   padding: 8px 12px;
 
-  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,.15);
 
   z-index: 5;
 }
 
+
 #title {
+
   font-size: 22px;
+
   font-weight: bold;
 
   margin-right: auto;
 }
 
+
 button {
+
   border: 0;
 
   background: #eeeeee;
@@ -76,13 +104,20 @@ button {
   cursor: pointer;
 }
 
+
 button:active {
+
   transform: scale(.95);
+
 }
 
-/* ---------- DRAWING AREA ---------- */
+
+/* =========================================================
+   DRAWING AREA
+   ========================================================= */
 
 #canvasWrap {
+
   flex: 1;
 
   position: relative;
@@ -90,7 +125,9 @@ button:active {
   overflow: hidden;
 }
 
+
 #canvas {
+
   position: absolute;
 
   inset: 0;
@@ -103,7 +140,10 @@ button:active {
   touch-action: none;
 }
 
-/* ---------- TOOLS ---------- */
+
+/* =========================================================
+   TOOLS
+   ========================================================= */
 
 #tools {
 
@@ -121,10 +161,12 @@ button:active {
 
   overflow-x: auto;
 
-  box-shadow: 0 -2px 8px rgba(0,0,0,.15);
+  box-shadow:
+    0 -2px 8px rgba(0,0,0,.15);
 
   z-index: 5;
 }
+
 
 .tool {
 
@@ -136,6 +178,7 @@ button:active {
 
   padding: 0 12px;
 }
+
 
 #color {
 
@@ -150,12 +193,16 @@ button:active {
   background: transparent;
 }
 
+
 #size {
 
   width: 120px;
 }
 
-/* ---------- NOTIFICATION BUTTON ---------- */
+
+/* =========================================================
+   NOTIFICATION BUTTON
+   ========================================================= */
 
 #notify {
 
@@ -168,12 +215,14 @@ button:active {
   white-space: nowrap;
 }
 
+
 #notify.enabled {
 
   background: #e7f8ec;
 
   border-color: #a9ddb8;
 }
+
 
 #notify.error {
 
@@ -182,12 +231,17 @@ button:active {
   border-color: #ffb5b5;
 }
 
-/* ---------- MOBILE ---------- */
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
 
 @media (max-width: 600px) {
 
   #title {
+
     font-size: 19px;
+
   }
 
   #top button {
@@ -195,18 +249,24 @@ button:active {
     padding: 9px 10px;
 
     font-size: 14px;
+
   }
 
   #tools {
 
     min-height: 76px;
+
   }
+
 }
 
 </style>
+
 </head>
 
+
 <body>
+
 
 <header id="top">
 
@@ -214,13 +274,16 @@ button:active {
     🎨 Draw!
   </div>
 
+
   <button onclick="undo()">
     ↩️
   </button>
 
+
   <button onclick="redo()">
     ↪️
   </button>
+
 
   <button onclick="clearCanvas()">
     🗑️
@@ -242,7 +305,9 @@ button:active {
     id="color"
     type="color"
     value="#000000"
-    title="Color">
+    title="Color"
+  >
+
 
   <input
     id="size"
@@ -250,23 +315,30 @@ button:active {
     min="1"
     max="60"
     value="6"
-    title="Brush size">
+    title="Brush size"
+  >
+
 
   <button
     class="tool"
-    onclick="setEraser()">
+    onclick="setEraser()"
+  >
     🧽
   </button>
 
-  <button
-    class="tool"
-    onclick="setPen()">
-    🖌️
-  </button>
 
   <button
     class="tool"
-    onclick="saveDrawing()">
+    onclick="setPen()"
+  >
+    🖌️
+  </button>
+
+
+  <button
+    class="tool"
+    onclick="saveDrawing()"
+  >
     💾
   </button>
 
@@ -275,19 +347,23 @@ button:active {
 
 <script type="module">
 
+
 /* =========================================================
    FIREBASE
    ========================================================= */
 
 import {
   initializeApp
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+} from
+  "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
 
 import {
   getMessaging,
   getToken,
   onMessage
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging.js";
+} from
+  "https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging.js";
 
 
 const firebaseConfig = {
@@ -314,10 +390,14 @@ const firebaseConfig = {
 
 
 const firebaseApp =
-  initializeApp(firebaseConfig);
+  initializeApp(
+    firebaseConfig
+  );
 
 
 let messaging = null;
+
+let firebaseServiceWorkerRegistration = null;
 
 
 /* =========================================================
@@ -327,14 +407,18 @@ let messaging = null;
 const canvas =
   document.getElementById("canvas");
 
+
 const ctx =
   canvas.getContext("2d");
+
 
 const colorInput =
   document.getElementById("color");
 
+
 const sizeInput =
   document.getElementById("size");
+
 
 let drawing = false;
 
@@ -345,23 +429,36 @@ let history = [];
 let historyIndex = -1;
 
 
-/* ---------- CANVAS SIZE ---------- */
+/* =========================================================
+   CANVAS SIZE
+   ========================================================= */
 
 function resizeCanvas() {
 
   const old =
     document.createElement("canvas");
 
-  old.width = canvas.width;
 
-  old.height = canvas.height;
+  old.width =
+    canvas.width;
 
 
-  if (canvas.width && canvas.height) {
+  old.height =
+    canvas.height;
+
+
+  if (
+    canvas.width &&
+    canvas.height
+  ) {
 
     old
       .getContext("2d")
-      .drawImage(canvas, 0, 0);
+      .drawImage(
+        canvas,
+        0,
+        0
+      );
 
   }
 
@@ -375,10 +472,15 @@ function resizeCanvas() {
 
 
   canvas.width =
-    Math.round(rect.width * dpr);
+    Math.round(
+      rect.width * dpr
+    );
+
 
   canvas.height =
-    Math.round(rect.height * dpr);
+    Math.round(
+      rect.height * dpr
+    );
 
 
   ctx.setTransform(
@@ -391,7 +493,8 @@ function resizeCanvas() {
   );
 
 
-  ctx.fillStyle = "white";
+  ctx.fillStyle =
+    "white";
 
 
   ctx.fillRect(
@@ -402,7 +505,10 @@ function resizeCanvas() {
   );
 
 
-  if (old.width && old.height) {
+  if (
+    old.width &&
+    old.height
+  ) {
 
     ctx.drawImage(
 
@@ -425,27 +531,34 @@ function resizeCanvas() {
 }
 
 
-/* ---------- POINTER POSITION ---------- */
+/* =========================================================
+   POINTER POSITION
+   ========================================================= */
 
 function position(e) {
 
   const rect =
     canvas.getBoundingClientRect();
 
+
   return {
 
     x:
-      e.clientX - rect.left,
+      e.clientX -
+      rect.left,
 
     y:
-      e.clientY - rect.top
+      e.clientY -
+      rect.top
 
   };
 
 }
 
 
-/* ---------- START DRAWING ---------- */
+/* =========================================================
+   START DRAWING
+   ========================================================= */
 
 function startDrawing(e) {
 
@@ -453,10 +566,13 @@ function startDrawing(e) {
 
   drawing = true;
 
+
   const p =
     position(e);
 
+
   ctx.beginPath();
+
 
   ctx.moveTo(
     p.x,
@@ -466,24 +582,32 @@ function startDrawing(e) {
 }
 
 
-/* ---------- DRAW ---------- */
+/* =========================================================
+   DRAW
+   ========================================================= */
 
 function draw(e) {
 
   if (!drawing)
     return;
 
+
   e.preventDefault();
+
 
   const p =
     position(e);
 
 
   ctx.lineWidth =
-    Number(sizeInput.value);
+    Number(
+      sizeInput.value
+    );
+
 
   ctx.lineCap =
     "round";
+
 
   ctx.lineJoin =
     "round";
@@ -512,31 +636,40 @@ function draw(e) {
     p.y
   );
 
+
   ctx.stroke();
 
 }
 
 
-/* ---------- STOP DRAWING ---------- */
+/* =========================================================
+   STOP DRAWING
+   ========================================================= */
 
 function stopDrawing() {
 
   if (!drawing)
     return;
 
+
   drawing = false;
+
 
   ctx.closePath();
 
+
   ctx.globalCompositeOperation =
     "source-over";
+
 
   saveHistory();
 
 }
 
 
-/* ---------- HISTORY ---------- */
+/* =========================================================
+   HISTORY
+   ========================================================= */
 
 function saveHistory() {
 
@@ -555,7 +688,9 @@ function saveHistory() {
   historyIndex++;
 
 
-  if (history.length > 30) {
+  if (
+    history.length > 30
+  ) {
 
     history.shift();
 
@@ -566,7 +701,9 @@ function saveHistory() {
 }
 
 
-/* ---------- RESTORE ---------- */
+/* =========================================================
+   RESTORE
+   ========================================================= */
 
 function restore(data) {
 
@@ -605,19 +742,26 @@ function restore(data) {
     };
 
 
-  img.src = data;
+  img.src =
+    data;
 
 }
 
 
-/* ---------- UNDO ---------- */
+/* =========================================================
+   UNDO
+   ========================================================= */
 
 function undo() {
 
-  if (historyIndex <= 0)
+  if (
+    historyIndex <= 0
+  )
     return;
 
+
   historyIndex--;
+
 
   restore(
     history[historyIndex]
@@ -626,7 +770,9 @@ function undo() {
 }
 
 
-/* ---------- REDO ---------- */
+/* =========================================================
+   REDO
+   ========================================================= */
 
 function redo() {
 
@@ -636,7 +782,9 @@ function redo() {
   )
     return;
 
+
   historyIndex++;
+
 
   restore(
     history[historyIndex]
@@ -645,7 +793,9 @@ function redo() {
 }
 
 
-/* ---------- CLEAR ---------- */
+/* =========================================================
+   CLEAR
+   ========================================================= */
 
 function clearCanvas() {
 
@@ -684,7 +834,9 @@ function clearCanvas() {
 }
 
 
-/* ---------- ERASER ---------- */
+/* =========================================================
+   ERASER
+   ========================================================= */
 
 function setEraser() {
 
@@ -693,7 +845,9 @@ function setEraser() {
 }
 
 
-/* ---------- PEN ---------- */
+/* =========================================================
+   PEN
+   ========================================================= */
 
 function setPen() {
 
@@ -702,7 +856,9 @@ function setPen() {
 }
 
 
-/* ---------- SAVE ---------- */
+/* =========================================================
+   SAVE
+   ========================================================= */
 
 function saveDrawing() {
 
@@ -714,7 +870,10 @@ function saveDrawing() {
     "drawing-" +
     new Date()
       .toISOString()
-      .replace(/[:.]/g, "-") +
+      .replace(
+        /[:.]/g,
+        "-"
+      ) +
     ".png";
 
 
@@ -729,27 +888,33 @@ function saveDrawing() {
 }
 
 
-/* ---------- POINTER EVENTS ---------- */
+/* =========================================================
+   POINTER EVENTS
+   ========================================================= */
 
 canvas.addEventListener(
   "pointerdown",
   startDrawing
 );
 
+
 canvas.addEventListener(
   "pointermove",
   draw
 );
+
 
 canvas.addEventListener(
   "pointerup",
   stopDrawing
 );
 
+
 canvas.addEventListener(
   "pointercancel",
   stopDrawing
 );
+
 
 canvas.addEventListener(
   "pointerleave",
@@ -758,7 +923,47 @@ canvas.addEventListener(
 
 
 /* =========================================================
-   FIREBASE NOTIFICATIONS
+   FIREBASE SERVICE WORKER
+   ========================================================= */
+
+async function registerFirebaseServiceWorker() {
+
+  if (
+    !("serviceWorker" in navigator)
+  ) {
+
+    throw new Error(
+      "Service workers are not supported."
+    );
+
+  }
+
+
+  firebaseServiceWorkerRegistration =
+    await navigator.serviceWorker.register(
+      "./service-worker.js",
+      {
+        scope: "./"
+      }
+    );
+
+
+  await navigator.serviceWorker.ready;
+
+
+  console.log(
+    "Firebase/PWA service worker registered:",
+    firebaseServiceWorkerRegistration
+  );
+
+
+  return firebaseServiceWorkerRegistration;
+
+}
+
+
+/* =========================================================
+   ENABLE NOTIFICATIONS
    ========================================================= */
 
 async function enableNotifications() {
@@ -782,19 +987,6 @@ async function enableNotifications() {
   }
 
 
-  if (
-    !("serviceWorker" in navigator)
-  ) {
-
-    alert(
-      "This browser does not support service workers."
-    );
-
-    return;
-
-  }
-
-
   try {
 
     button.textContent =
@@ -804,40 +996,47 @@ async function enableNotifications() {
     button.disabled = true;
 
 
-    /* ---------- PERMISSION ---------- */
+    /* -----------------------------------------------
+       REQUEST PERMISSION
+       ----------------------------------------------- */
 
     const permission =
       await Notification.requestPermission();
 
 
-    if (permission !== "granted") {
+    if (
+      permission !== "granted"
+    ) {
 
       button.textContent =
         "🔔 Enable Notifications";
 
-      button.disabled = false;
+
+      button.disabled =
+        false;
+
 
       alert(
         "Notification permission was not granted."
       );
+
 
       return;
 
     }
 
 
-    /* ---------- REGISTER FCM SERVICE WORKER ---------- */
+    /* -----------------------------------------------
+       REGISTER OUR SINGLE SERVICE WORKER
+       ----------------------------------------------- */
 
     const registration =
-      await navigator.serviceWorker.register(
-        "./firebase-messaging-sw.js"
-      );
+      await registerFirebaseServiceWorker();
 
 
-    await navigator.serviceWorker.ready;
-
-
-    /* ---------- FIREBASE MESSAGING ---------- */
+    /* -----------------------------------------------
+       FIREBASE MESSAGING
+       ----------------------------------------------- */
 
     messaging =
       getMessaging(
@@ -845,7 +1044,9 @@ async function enableNotifications() {
       );
 
 
-    /* ---------- GET TOKEN ---------- */
+    /* -----------------------------------------------
+       GET FCM TOKEN
+       ----------------------------------------------- */
 
     const token =
       await getToken(
@@ -868,19 +1069,15 @@ async function enableNotifications() {
     if (!token) {
 
       throw new Error(
-        "Firebase did not return a notification token."
+        "Firebase did not return an FCM registration token."
       );
 
     }
 
 
-    /*
-       We temporarily store the token locally.
-
-       Later, when we build the scheduler,
-       we will securely register this token
-       with the notification backend.
-    */
+    /* -----------------------------------------------
+       SAVE TOKEN LOCALLY
+       ----------------------------------------------- */
 
     localStorage.setItem(
       "drawingNotificationToken",
@@ -894,28 +1091,36 @@ async function enableNotifications() {
     );
 
 
-    button.textContent =
-      "🔔 Notifications ON";
-
-    button.classList.add(
-      "enabled"
-    );
-
-    button.disabled = false;
-
-
     console.log(
       "FCM registration token:",
       token
     );
 
 
+    button.textContent =
+      "🔔 Notifications ON";
+
+
+    button.classList.remove(
+      "error"
+    );
+
+
+    button.classList.add(
+      "enabled"
+    );
+
+
+    button.disabled =
+      false;
+
+
     alert(
       "Notifications are enabled on this device."
     );
 
-
   }
+
 
   catch (error) {
 
@@ -928,7 +1133,15 @@ async function enableNotifications() {
     button.textContent =
       "🔔 Enable Notifications";
 
-    button.disabled = false;
+
+    button.disabled =
+      false;
+
+
+    button.classList.remove(
+      "enabled"
+    );
+
 
     button.classList.add(
       "error"
@@ -936,8 +1149,10 @@ async function enableNotifications() {
 
 
     alert(
+
       "Notification setup failed.\n\n" +
       error.message
+
     );
 
   }
@@ -945,7 +1160,9 @@ async function enableNotifications() {
 }
 
 
-/* ---------- FOREGROUND MESSAGES ---------- */
+/* =========================================================
+   FOREGROUND MESSAGES
+   ========================================================= */
 
 function setupForegroundMessaging() {
 
@@ -958,7 +1175,9 @@ function setupForegroundMessaging() {
 
 
     onMessage(
+
       messaging,
+
       payload => {
 
         console.log(
@@ -983,7 +1202,9 @@ function setupForegroundMessaging() {
         ) {
 
           new Notification(
+
             title,
+
             {
 
               body: body,
@@ -992,14 +1213,17 @@ function setupForegroundMessaging() {
                 "./icon-192.png"
 
             }
+
           );
 
         }
 
       }
+
     );
 
   }
+
 
   catch (error) {
 
@@ -1051,55 +1275,28 @@ function addNotificationButton() {
 
 
   if (
+
     localStorage.getItem(
       "drawingNotificationsEnabled"
-    ) === "true" &&
+    ) === "true"
+
+    &&
+
+    "Notification" in window
+
+    &&
+
     Notification.permission ===
       "granted"
+
   ) {
 
     button.textContent =
       "🔔 Notifications ON";
 
+
     button.classList.add(
       "enabled"
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   PWA SERVICE WORKER
-   ========================================================= */
-
-async function registerPWA() {
-
-  if (
-    !("serviceWorker" in navigator)
-  )
-    return;
-
-
-  try {
-
-    await navigator.serviceWorker.register(
-      "./service-worker.js"
-    );
-
-
-    console.log(
-      "PWA service worker registered"
-    );
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "PWA service worker registration failed:",
-      error
     );
 
   }
@@ -1119,15 +1316,33 @@ window.addEventListener(
 
 resizeCanvas();
 
+
 saveHistory();
+
 
 addNotificationButton();
 
-registerPWA();
+
+/*
+   Register the single service worker
+   immediately.
+*/
+
+registerFirebaseServiceWorker()
+  .catch(error => {
+
+    console.error(
+      "Service worker registration failed:",
+      error
+    );
+
+  });
+
 
 setupForegroundMessaging();
 
 </script>
 
 </body>
+
 </html>
