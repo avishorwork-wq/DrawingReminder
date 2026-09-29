@@ -7,6 +7,9 @@
 
 <title>Draw!</title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+
 <style>
 * {
   box-sizing: border-box;
@@ -250,10 +253,14 @@ function draw(e) {
   ctx.lineJoin = "round";
 
   if (erasing) {
+
     ctx.globalCompositeOperation = "destination-out";
+
   } else {
+
     ctx.globalCompositeOperation = "source-over";
     ctx.strokeStyle = colorInput.value;
+
   }
 
   ctx.lineTo(p.x, p.y);
@@ -294,7 +301,12 @@ function restore(data) {
 
     const rect = canvas.getBoundingClientRect();
 
-    ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.clearRect(
+      0,
+      0,
+      rect.width,
+      rect.height
+    );
 
     ctx.drawImage(
       img,
@@ -413,6 +425,28 @@ window.addEventListener(
 resizeCanvas();
 saveHistory();
 
+/* ---------- PWA SERVICE WORKER ---------- */
+
+if ("serviceWorker" in navigator) {
+
+  window.addEventListener("load", () => {
+
+    navigator.serviceWorker.register("./service-worker.js")
+
+      .then(() => {
+        console.log("Service worker registered");
+      })
+
+      .catch(error => {
+        console.error(
+          "Service worker registration failed:",
+          error
+        );
+      });
+
+  });
+
+}
 </script>
 
 </body>
