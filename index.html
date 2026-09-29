@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Draw!</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- TOP BAR ---------- */
+
+#top {
+  height: 64px;
+  min-height: 64px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  z-index: 5;
+}
+
+#title {
+  font-size: 22px;
+  font-weight: bold;
+  margin-right: auto;
+}
+
+button {
+  border: 0;
+  background: #eeeeee;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:active {
+  transform: scale(.95);
+}
+
+/* ---------- DRAWING AREA ---------- */
+
+#canvasWrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  touch-action: none;
+}
+
+/* ---------- TOOLBAR ---------- */
+
+#tools {
+  min-height: 82px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  overflow-x: auto;
+  box-shadow: 0 -2px 8px rgba(0,0,0,.15);
+  z-index: 5;
+}
+
+.tool {
+  flex: 0 0 auto;
+  min-width: 48px;
+  height: 48px;
+  padding: 0 12px;
+}
+
+#color {
+  width: 52px;
+  height: 52px;
+  padding: 3px;
+  border: none;
+  background: transparent;
+}
+
+#size {
+  width: 120px;
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 600px) {
+  #title {
+    font-size: 19px;
+  }
+
+  #top button {
+    padding: 9px 10px;
+    font-size: 14px;
+  }
+
+  #tools {
+    min-height: 76px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header id="top">
+  <div id="title">🎨 Draw!</div>
+
+  <button onclick="undo()">↩️</button>
+  <button onclick="redo()">↪️</button>
+  <button onclick="clearCanvas()">🗑️</button>
+</header>
+
+<div id="canvasWrap">
+  <canvas id="canvas"></canvas>
+</div>
+
+<div id="tools">
+
+  <input
+    id="color"
+    type="color"
+    value="#000000"
+    title="Color">
+
+  <input
+    id="size"
+    type="range"
+    min="1"
+    max="60"
+    value="6"
+    title="Brush size">
+
+  <button class="tool" onclick="setEraser()">🧽</button>
+  <button class="tool" onclick="setPen()">🖌️</button>
+  <button class="tool" onclick="saveDrawing()">💾</button>
+
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const colorInput = document.getElementById("color");
+const sizeInput = document.getElementById("size");
+
+let drawing = false;
+let erasing = false;
+
+let history = [];
+let historyIndex = -1;
+
+function resizeCanvas() {
+
+  const old = document.createElement("canvas");
+  old.width = canvas.width;
+  old.height = canvas.height;
+
+  if (canvas.width && canvas.height) {
+    old.getContext("2d").drawImage(canvas, 0, 0);
+  }
+
+  const rect = canvas.getBoundingClientRect();
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, rect.width, rect.height);
+
+  if (old.width && old.height) {
+    ctx.drawImage(
+      old,
+      0,
+      0,
+      old.width,
+      old.height,
+      0,
+      0,
+      rect.width,
+      rect.height
+    );
+  }
+}
+
+function position(e) {
+
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
+
+function startDrawing(e) {
+
+  e.preventDefault();
+
+  drawing = true;
+
+  const p = position(e);
+
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+}
+
+function draw(e) {
+
+  if (!drawing) return;
+
+  e.preventDefault();
+
+  const p = position(e);
+
+  ctx.lineWidth = Number(sizeInput.value);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  if (erasing) {
+    ctx.globalCompositeOperation = "destination-out";
+  } else {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = colorInput.value;
+  }
+
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+}
+
+function stopDrawing() {
+
+  if (!drawing) return;
+
+  drawing = false;
+
+  ctx.closePath();
+  ctx.globalCompositeOperation = "source-over";
+
+  saveHistory();
+}
+
+function saveHistory() {
+
+  history = history.slice(0, historyIndex + 1);
+
+  history.push(canvas.toDataURL());
+
+  historyIndex++;
+
+  if (history.length > 30) {
+    history.shift();
+    historyIndex--;
+  }
+}
+
+function restore(data) {
+
+  const img = new Image();
+
+  img.onload = function() {
+
+    const rect = canvas.getBoundingClientRect();
+
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    ctx.drawImage(
+      img,
+      0,
+      0,
+      rect.width,
+      rect.height
+    );
+  };
+
+  img.src = data;
+}
+
+function undo() {
+
+  if (historyIndex <= 0) {
+    return;
+  }
+
+  historyIndex--;
+
+  restore(history[historyIndex]);
+}
+
+function redo() {
+
+  if (historyIndex >= history.length - 1) {
+    return;
+  }
+
+  historyIndex++;
+
+  restore(history[historyIndex]);
+}
+
+function clearCanvas() {
+
+  if (!confirm("Clear this drawing?")) {
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+
+  ctx.globalCompositeOperation = "source-over";
+
+  ctx.fillStyle = "white";
+
+  ctx.fillRect(
+    0,
+    0,
+    rect.width,
+    rect.height
+  );
+
+  saveHistory();
+}
+
+function setEraser() {
+
+  erasing = true;
+}
+
+function setPen() {
+
+  erasing = false;
+}
+
+function saveDrawing() {
+
+  const link = document.createElement("a");
+
+  link.download =
+    "drawing-" +
+    new Date().toISOString().replace(/[:.]/g, "-") +
+    ".png";
+
+  link.href = canvas.toDataURL("image/png");
+
+  link.click();
+}
+
+/* ---------- POINTER EVENTS ---------- */
+
+canvas.addEventListener(
+  "pointerdown",
+  startDrawing
+);
+
+canvas.addEventListener(
+  "pointermove",
+  draw
+);
+
+canvas.addEventListener(
+  "pointerup",
+  stopDrawing
+);
+
+canvas.addEventListener(
+  "pointercancel",
+  stopDrawing
+);
+
+canvas.addEventListener(
+  "pointerleave",
+  stopDrawing
+);
+
+/* ---------- STARTUP ---------- */
+
+window.addEventListener(
+  "resize",
+  resizeCanvas
+);
+
+resizeCanvas();
+saveHistory();
+
+</script>
+
+</body>
+</html>
